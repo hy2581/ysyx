@@ -44,6 +44,8 @@ ifneq ($(CONFIG_CC),)
 CC = $(call remove_quote,$(CONFIG_CC))
 endif
 CFLAGS_BUILD += $(call remove_quote,$(CONFIG_CC_OPT))
+# 添加调试符号和关闭优化，便于 gdb 调试
+CFLAGS_BUILD += -O0 -g
 CFLAGS_BUILD += $(if $(CONFIG_CC_LTO),-flto,)
 CFLAGS_BUILD += $(if $(CONFIG_CC_DEBUG),-Og -ggdb3,)
 CFLAGS_BUILD += $(if $(CONFIG_CC_ASAN),-fsanitize=address,)
