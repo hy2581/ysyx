@@ -18,6 +18,7 @@
 #include <readline/readline.h>
 #include <readline/history.h>
 #include "sdb.h"
+#include <memory/paddr.h>
 
 static int is_batch_mode = false;
 
@@ -77,6 +78,30 @@ static int cmd_info(char *args){
   return 0;
 }
 
+static int cmd_x(char *args) {
+  // 从命令参数中提取扫描个数 N
+  char *arg = strtok(NULL, " ");
+  if (arg == NULL) {
+    printf("Usage: x N EXPR\n");
+    return 0;
+  }
+  int n = atoi(arg);
+  // 提取表达式EXPR，本简化版本只允许十六进制字面值
+  char *expr = strtok(NULL, " ");
+  if (expr == NULL) {
+    printf("Usage: x N EXPR\n");
+    return 0;
+  }
+  // 解析表达式为内存起始地址
+  uint32_t addr = strtoul(expr, NULL, 0);
+  // 循环读取内存数据并以十六进制打印
+  for (int i = 0; i < n; i++) {
+    word_t data = paddr_read(addr + i * 4, 4); // 此处按字为单位，每次读取4个字节数据
+    printf("0x%08x: 0x%08x\n", addr + i * 4, data);
+  }
+  return 0;
+}
+
 static struct {
   const char *name;
   const char *description;
@@ -87,6 +112,7 @@ static struct {
   { "q", "Exit NEMU", cmd_q },
   { "n", "Execute the next instruction", cmd_n},
   { "info", "Print the information of registers or watchpoints", cmd_info},
+  { "x", "Scan memory. Usage: x N EXPR", cmd_x },
 
   /* TODO: Add more commands */
 
