@@ -60,7 +60,7 @@ static int cmd_n(char *args){
 }
 
 static int cmd_info(char *args){
-  char *arg = strtok(NULL, args);
+  char *arg = strtok(args, " ");
   if(arg == NULL){
     printf("Please input the type of information you want to know\n");
     return 0;
