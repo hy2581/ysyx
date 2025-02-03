@@ -59,6 +59,24 @@ static int cmd_n(char *args){
   return 0;
 }
 
+static int cmd_info(char *args){
+  char *arg = strtok(NULL, " ");
+  if(arg == NULL){
+    printf("Please input the type of information you want to know\n");
+    return 0;
+  }
+  if(strcmp(arg, "r") == 0){
+    isa_reg_display();
+  }
+  else if(strcmp(arg, "w") == 0){
+    //print_wp();
+  }
+  else{
+    printf("Unknown command '%s'\n", arg);
+  }
+  return 0;
+}
+
 static struct {
   const char *name;
   const char *description;
@@ -68,6 +86,7 @@ static struct {
   { "c", "Continue the execution of the program", cmd_c },
   { "q", "Exit NEMU", cmd_q },
   { "n", "Execute the next instruction", cmd_n},
+  { "info", "Print the information of registers or watchpoints", cmd_info},
 
   /* TODO: Add more commands */
 
