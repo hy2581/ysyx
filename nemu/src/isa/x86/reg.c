@@ -54,6 +54,21 @@ void reg_test() {
 }
 
 void isa_reg_display() {
+    // 将 32 位通用寄存器打印出来
+  printf("eax = 0x%08x    ", cpu.eax);
+  printf("ecx = 0x%08x    ", cpu.ecx);
+  printf("edx = 0x%08x    ", cpu.edx);
+  printf("ebx = 0x%08x\n",   cpu.ebx);
+
+  printf("esp = 0x%08x    ", cpu.esp);
+  printf("ebp = 0x%08x    ", cpu.ebp);
+  printf("esi = 0x%08x    ", cpu.esi);
+  printf("edi = 0x%08x\n",   cpu.edi);
+
+  // 打印程序计数器 (PC)
+  printf("eip = 0x%08x\n", cpu.pc);
+
+  // 若需要，也可在此处打印 EFLAGS、段寄存器等
 }
 
 word_t isa_reg_str2val(const char *s, bool *success) {
