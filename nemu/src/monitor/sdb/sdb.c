@@ -93,11 +93,27 @@ static int cmd_x(char *args) {
     return 0;
   }
   // 解析表达式为内存起始地址
+  
   uint32_t addr = strtoul(expr, NULL, 0);
   // 循环读取内存数据并以十六进制打印
   for (int i = 0; i < n; i++) {
     word_t data = paddr_read(addr + i * 4, 4); // 此处按字为单位，每次读取4个字节数据
     printf("0x%08x: 0x%08x\n", addr + i * 4, data);
+  }
+  return 0;
+}
+
+static int cmd_p(char *args) {
+  if (args == NULL) {
+    printf("Usage: p EXPR\n");
+    return 0;
+  }
+  bool success = true;
+  word_t result = expr(args, &success); // 调用 expr 函数对表达式求值
+  if (!success) {
+    printf("Bad expression.\n");
+  } else {
+    printf("%s = %u (0x%x)\n", args, result, result);
   }
   return 0;
 }
@@ -113,6 +129,7 @@ static struct {
   { "n", "Execute the next instruction", cmd_n},
   { "info", "Print the information of registers or watchpoints", cmd_info},
   { "x", "Scan memory. Usage: x N EXPR", cmd_x },
+  { "p", "Evaluate expression. Usage: p EXPR", cmd_p },
 
   /* TODO: Add more commands */
 
