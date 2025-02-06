@@ -164,25 +164,30 @@ static word_t eval(int p, int q, bool *success) {
     return eval(p + 1, q - 1, success);
   }
 
-  // 寻找主运算符(简化处理)
+  // 寻找主运算符(改进方式)
   int op = -1;
   int level_min = 9999;
   int paren_count = 0;
+
   for (int i = p; i <= q; i++) {
-    if (tokens[i].type == '(') { paren_count++; i++; 
-      while (paren_count > 0 && i <= q) {
-        if (tokens[i].type == '(') paren_count++;
-        else if (tokens[i].type == ')') paren_count--;
-        i++;
-      }
-      continue;
+    // 更新括号计数，上遇 '('++，遇 ')'--
+    if (tokens[i].type == '(') {
+      paren_count++;
+    } else if (tokens[i].type == ')') {
+      paren_count--;
     }
-    int level = 0;
-    if (tokens[i].type == '+' || tokens[i].type == '-') level = 1;
-    if (tokens[i].type == '*' || tokens[i].type == '/') level = 2;
-    if (level <= level_min && level > 0) {
-      level_min = level;
-      op = i;
+
+    // 只在外层（paren_count == 0）考虑运算符，跳过嵌套括号内的运算符
+    if (paren_count == 0) {
+      int level = 0;
+      if (tokens[i].type == '+' || tokens[i].type == '-') level = 1;
+      if (tokens[i].type == '*' || tokens[i].type == '/') level = 2;
+
+      // 记录“最低优先级”且最右侧的运算符下标
+      if (level <= level_min && level > 0) {
+        level_min = level;
+        op = i;
+      }
     }
   }
 
