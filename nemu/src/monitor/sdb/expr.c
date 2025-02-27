@@ -25,7 +25,7 @@
 #include "common.h"
 #include <memory/paddr.h>
 
-
+//得到寄存器值函数，主要用于封装isa_reg_str2val
 static word_t get_register_value(const char *reg_name) {
   bool success = true;
   word_t val = isa_reg_str2val(reg_name, &success);
@@ -202,7 +202,7 @@ static bool make_token(char *e) {
   return true;  // 所有字符都成功解析，返回成功
 }
 
-/* 检查从p到q的token是否被一对括号包围 */
+/* 检查从p到q的token是否被一对*完整*的括号包围 */
 static bool check_parentheses(int p, int q) {
   // 检查是否以左括号开始，右括号结束
   if (tokens[p].type == '(' && tokens[q].type == ')') {
@@ -247,15 +247,15 @@ static word_t eval(int p, int q, bool *success) {
     }
   }
   
-    // 处理解引用运算符
-    if (tokens[p].type == TK_DEREF && p < q) {
-      // 计算解引用的操作数
-      word_t addr = eval(p + 1, q, success);
-      if (!*success) return 0;
-      
-      // 读取内存中的值
-      return paddr_read(addr, 4);  // 假设读取4字节，根据实际需要调整
-    }
+  // 处理解引用运算符
+  if (tokens[p].type == TK_DEREF && p < q) {
+    // 计算解引用的操作数
+    word_t addr = eval(p + 1, q, success);
+    if (!*success) return 0;
+    
+    // 读取内存中的值
+    return paddr_read(addr, 4);  // 假设读取4字节，根据实际需要调整
+  }
 
   // 如果表达式被一对括号完整包围，去除这对括号，递归求值
   if (check_parentheses(p, q)) {
@@ -313,11 +313,12 @@ static word_t eval(int p, int q, bool *success) {
     case '-': return val1 - val2;  // 减法
     case '*': return val1 * val2;  // 乘法
     case '/':
-      if (val2 == 0) {  // 检查除数是否为0
+      {if (val2 == 0) {  // 检查除数是否为0
         *success = false;  // 除数为0，设置失败标志
         return 0;
       }
       return val1 / val2;  // 除法
+      }
     case TK_EQ: return val1 == val2;  // 相等比较
     case TK_NEQ: return val1 != val2;  // 不等比较
     case TK_AND: return val1 && val2;  // 逻辑与

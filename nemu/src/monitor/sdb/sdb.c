@@ -8,7 +8,7 @@
 *
 * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
 * EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
-* MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+* MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.
 *
 * See the Mulan PSL v2 for more details.
 ***************************************************************************************/
@@ -60,21 +60,22 @@ static int cmd_n(char *args){
   return 0;
 }
 
-static int cmd_info(char *args){
-  char *arg = strtok(args, " ");
-  if(arg == NULL){
-    printf("Please input the type of information you want to know\n");
+static int cmd_info(char *args) {
+  if (args == NULL) {
+    printf("Invalid info command\n");
     return 0;
   }
-  if(strcmp(arg, "r") == 0){
+  
+  if (args[0] == 'r') {
+    // 显示寄存器信息（已有）
     isa_reg_display();
+  } else if (args[0] == 'w') {
+    // 显示监视点信息
+    list_watchpoints();
+  } else {
+    printf("Unknown info command: '%s'\n", args);
   }
-  else if(strcmp(arg, "w") == 0){
-    //print_wp();
-  }
-  else{
-    printf("Unknown command '%s'\n", arg);
-  }
+  
   return 0;
 }
 
@@ -118,6 +119,63 @@ static int cmd_p(char *args) {
   return 0;
 }
 
+// 设置监视点
+static int cmd_w(char *args) {
+  if (args == NULL) {
+    printf("Please specify an expression\n");
+    return 0;
+  }
+  
+  bool success;
+  uint32_t val = expr(args, &success);
+  
+  if (!success) {
+    printf("Failed to evaluate expression '%s'\n", args);
+    return 0;
+  }
+  
+  WP *wp = new_wp();
+  if (wp == NULL) {
+    printf("Failed to create watchpoint\n");
+    return 0;
+  }
+  
+  strncpy(wp->expr, args, sizeof(wp->expr) - 1);
+  wp->expr[sizeof(wp->expr) - 1] = '\0'; // 确保字符串结束
+  wp->old_val = val;
+  
+  printf("Watchpoint %d: %s\n", wp->NO, wp->expr);
+  
+  return 0;
+}
+
+// 删除监视点
+static int cmd_d(char *args) {
+  if (args == NULL) {
+    printf("Please specify the watchpoint number\n");
+    return 0;
+  }
+  
+  char *endptr;
+  int no = strtol(args, &endptr, 10);
+  
+  if (*endptr != '\0') {
+    printf("Invalid watchpoint number: %s\n", args);
+    return 0;
+  }
+  
+  WP *wp = find_wp(no);
+  if (wp == NULL) {
+    printf("Watchpoint %d not found\n", no);
+    return 0;
+  }
+  
+  free_wp(wp);
+  printf("Deleted watchpoint %d\n", no);
+  
+  return 0;
+}
+
 static struct {
   const char *name;
   const char *description;
@@ -130,6 +188,8 @@ static struct {
   { "info", "Print the information of registers or watchpoints", cmd_info},
   { "x", "Scan memory. Usage: x N EXPR", cmd_x },
   { "p", "Evaluate expression. Usage: p EXPR", cmd_p },
+  { "w", "Set a watchpoint. Usage: w EXPR", cmd_w },
+  { "d", "Delete a watchpoint. Usage: d N", cmd_d },
 
   /* TODO: Add more commands */
 
