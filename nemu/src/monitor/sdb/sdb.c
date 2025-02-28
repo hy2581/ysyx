@@ -126,7 +126,7 @@ static int cmd_w(char *args) {
     return 0;
   }
   
-  bool success;
+  bool success = true;
   uint32_t val = expr(args, &success);
   
   if (!success) {
