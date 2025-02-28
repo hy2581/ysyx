@@ -32,5 +32,30 @@ void isa_reg_display() {
 }
 
 word_t isa_reg_str2val(const char *s, bool *success) {
+  *success = true;
+  
+  // 特殊处理程序计数器
+  if (strcmp(s, "pc") == 0) {
+    return cpu.pc;
+  }
+  
+  // 处理$x数字形式的寄存器名，例如$0, $1, $2...
+  if (s[0] == '$' && s[1] >= '0' && s[1] <= '9') {
+    int idx = 0;
+    sscanf(s + 1, "%d", &idx);
+    if (idx >= 0 && idx < 32) {
+      return cpu.gpr[idx];
+    }
+  }
+  
+  // 处理符号名形式的寄存器
+  for (int i = 0; i < 32; i++) {
+    if (strcmp(regs[i], s) == 0) {
+      return cpu.gpr[i];
+    }
+  }
+  
+  // 如果没找到匹配的寄存器名
+  *success = false;
   return 0;
 }
