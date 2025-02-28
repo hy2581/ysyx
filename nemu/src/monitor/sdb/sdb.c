@@ -99,7 +99,7 @@ static int cmd_x(char *args) {
   uint32_t addr = strtoul(expr, NULL, 0);
   // 循环读取内存数据并以十六进制打印
   for (int i = 0; i < n; i++) {
-    word_t data = paddr_read(addr + i * 4, 4); // 此处按字为单位，每次读取4个字节数据
+    word_t data = paddr_read(addr + i * 4, 4); // 此处按字为单位，每次读取四个字节数据
     printf("0x%08x: 0x%08x\n", addr + i * 4, data);
   }
   return 0;
