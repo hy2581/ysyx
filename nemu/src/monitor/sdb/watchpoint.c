@@ -119,7 +119,7 @@ bool check_watchpoints() {
   bool triggered = false;
   
   while (p != NULL) {
-    bool success;
+    bool success=1;
     uint32_t new_val = expr(p->expr, &success); // 重新计算表达式的值
     
     if (!success) {
