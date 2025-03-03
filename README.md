@@ -17,3 +17,6 @@ The following subprojects/components are included. Some of them are not fully im
 * [Abstract-Machine](https://github.com/NJU-ProjectN/abstract-machine)
 * [Nanos-lite](https://github.com/NJU-ProjectN/nanos-lite)
 * [Navy-apps](https://github.com/NJU-ProjectN/navy-apps)
+
+可能用到的指令：
+am-kernels/tests/cpu-tests/里的make ARCH=riscv32-nemu ALL=dummy run

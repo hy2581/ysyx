@@ -75,7 +75,12 @@ static inline void pattern_decode_hex(const char *str, int len,
       __shift = (c == '?' ? __shift + 4 : 0); \
     } \
   }
-
+  /*
+  检查字符是否有效（0-9, a-f, 或 ?）
+  更新 __key：左移 4 位，然后将十六进制字符转为数值（问号为 0）
+  更新 __mask：左移 4 位，然后对问号设为 0，其他设为 0xf（表示完全匹配）
+  更新 __shift：如果是问号则增加 4（因为每个十六进制字符是 4 位），否则为 0
+  */
   macro16(0);
   panic("pattern too long");
 #undef macro

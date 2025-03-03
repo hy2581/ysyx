@@ -229,13 +229,13 @@ void sdb_mainloop() {
   if (is_batch_mode) {
     cmd_c(NULL);
     return;
-  }
+  }//是否处于批处理模式
 
-  for (char *str; (str = rl_gets()) != NULL; ) {
-    char *str_end = str + strlen(str);
+  for (char *str; (str = rl_gets()) != NULL; ) {//通过rl_gets读取用户输入
+    char *str_end = str + strlen(str);//计算字符串的结束位置
 
     /* extract the first token as the command */
-    char *cmd = strtok(str, " ");
+    char *cmd = strtok(str, " ");//按空格分隔字符串，提取第一个token作为命令
     if (cmd == NULL) { continue; }
 
     /* treat the remaining string as the arguments,
@@ -245,19 +245,25 @@ void sdb_mainloop() {
     if (args >= str_end) {
       args = NULL;
     }
-
+    //保存剩下的内容进入args
 #ifdef CONFIG_DEVICE
     extern void sdl_clear_event_queue();
     sdl_clear_event_queue();
 #endif
+    //如果定义了 CONFIG_DEVICE，则清除 SDL 事件队列。
 
     int i;
     for (i = 0; i < NR_CMD; i ++) {
       if (strcmp(cmd, cmd_table[i].name) == 0) {
-        if (cmd_table[i].handler(args) < 0) { return; }
+        if (cmd_table[i].handler(args) < 0) { return; }//在这一行调用相应的处理函数
         break;
       }
     }
+    /*
+    遍历 cmd_table 数组，查找匹配输入命令的项。
+    如果找到匹配的命令，则调用对应的处理函数，并将参数传递给它。
+    如果处理函数返回负值（例如 cmd_q 函数），则退出循环并返回。
+    */
 
     if (i == NR_CMD) { printf("Unknown command '%s'\n", cmd); }
   }
