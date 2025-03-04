@@ -48,15 +48,38 @@ static void decode_operand(Decode *s, int *rd, word_t *src1, word_t *src2, word_
 }
 
 static int decode_exec(Decode *s) {
-  s->dnpc = s->snpc;
+  s->dnpc = s->snpc;//默认情况下下一pc是静态下一pc
 
-#define INSTPAT_INST(s) ((s)->isa.inst)
+#define INSTPAT_INST(s) ((s)->isa.inst)//获取当前指令
 #define INSTPAT_MATCH(s, name, type, ... /* execute body */ ) { \
   int rd = 0; \
   word_t src1 = 0, src2 = 0, imm = 0; \
   decode_operand(s, &rd, &src1, &src2, &imm, concat(TYPE_, type)); \
   __VA_ARGS__ ; \
 }
+//解码指令，获取操作数，然后执行指令体
+/*
+s - 指令解码结构体 (Decode *类型)，包含当前正在执行的指令的所有信息
+name - 指令名称，如auipc、lbu等（仅用于标识）
+type - 指令格式类型，如 I(I型指令)、U(U型指令)、S(S型指令)、N(无类型)
+execute body  - 可变参数，表示指令的执行代码
+
+rd - 目标寄存器号
+src1 - 第一个源操作数（通常是寄存器值）
+src2 - 第二个源操作数（通常是寄存器值）
+imm - 立即数
+
+调用 decode_operand 函数解析指令中的操作数
+使用 concat(TYPE_, type) 连接 TYPE_ 和参数 type，形成完整的类型名
+例如，对于I型指令，会变成 TYPE_I
+
+decode_operand 函数根据指令类型解码出不同的操作数：
+
+对于 I 型指令：获取 rs1 寄存器值和 I 型立即数
+对于 U 型指令：仅获取 U 型立即数
+对于 S 型指令：获取两个寄存器值 rs1、rs2 和 S 型立即数
+对于 N 型指令：不提取操作数
+*/
 
   INSTPAT_START();
   INSTPAT("??????? ????? ????? ??? ????? 00101 11", auipc  , U, R(rd) = s->pc + imm);
@@ -74,5 +97,10 @@ static int decode_exec(Decode *s) {
 
 int isa_exec_once(Decode *s) {
   s->isa.inst = inst_fetch(&s->snpc, 4);
+  /*
+  调用 inst_fetch 函数从当前指令地址 (s->snpc) 处获取一个 4 字节的指令
+  指令被读取并存储在 s->isa.inst 中
+  &s->snpc 作为引用参数传递，在取指后会被更新为下一条
+  */
   return decode_exec(s);
 }

@@ -48,32 +48,41 @@ static void trace_and_difftest(Decode *_this, vaddr_t dnpc) {
 #endif
 }
 
+
+/*
+设置并执行当前指令
+更新 CPU 的程序计数器
+如果启用了指令追踪，生成详细的日志，包括：
+指令地址
+指令的十六进制表示
+指令的汇编代码表示（通过反汇编）
+*/
 static void exec_once(Decode *s, vaddr_t pc) {
-  s->pc = pc;
-  s->snpc = pc;
+  s->pc = pc;//将当前 PC 值设置到 s->pc
+  s->snpc = pc;//将相同的 PC 值设置到 s->snpc（静态下一个 PC，即当前指令的地址）
   isa_exec_once(s);
-  cpu.pc = s->dnpc;
-#ifdef CONFIG_ITRACE
-  char *p = s->logbuf;
-  p += snprintf(p, sizeof(s->logbuf), FMT_WORD ":", s->pc);
-  int ilen = s->snpc - s->pc;
+  cpu.pc = s->dnpc;//执行完成后，将动态计算出的下一个 PC 值 s->dnpc 更新到 CPU 的 PC 寄存器
+#ifdef CONFIG_ITRACE//用于生成指令追踪日志
+  char *p = s->logbuf;//指针指向日志缓冲区
+  p += snprintf(p, sizeof(s->logbuf), FMT_WORD ":", s->pc);//将pc值格式到日志中
+  int ilen = s->snpc - s->pc;//计算指令长度并获取指令字节
   int i;
   uint8_t *inst = (uint8_t *)&s->isa.inst;
-#ifdef CONFIG_ISA_x86
+#ifdef CONFIG_ISA_x86    //输出指令的十六进制表示：
   for (i = 0; i < ilen; i ++) {
 #else
   for (i = ilen - 1; i >= 0; i --) {
 #endif
     p += snprintf(p, 4, " %02x", inst[i]);
   }
-  int ilen_max = MUXDEF(CONFIG_ISA_x86, 8, 4);
+  int ilen_max = MUXDEF(CONFIG_ISA_x86, 8, 4);//对齐输出
   int space_len = ilen_max - ilen;
   if (space_len < 0) space_len = 0;
   space_len = space_len * 3 + 1;
   memset(p, ' ', space_len);
   p += space_len;
 
-  void disassemble(char *str, int size, uint64_t pc, uint8_t *code, int nbyte);
+  void disassemble(char *str, int size, uint64_t pc, uint8_t *code, int nbyte);//反汇编
   disassemble(p, s->logbuf + sizeof(s->logbuf) - p,
       MUXDEF(CONFIG_ISA_x86, s->snpc, s->pc), (uint8_t *)&s->isa.inst, ilen);
 #endif

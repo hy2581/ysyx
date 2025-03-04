@@ -27,6 +27,16 @@ static uint8_t pmem[CONFIG_MSIZE] PG_ALIGN = {};
 uint8_t* guest_to_host(paddr_t paddr) { return pmem + paddr - CONFIG_MBASE; }
 paddr_t host_to_guest(uint8_t *haddr) { return haddr - pmem + CONFIG_MBASE; }
 
+/*
+将客户机（模拟的计算机）物理地址转换为主机（运行模拟器的实际计算机）内存指针
+guest_to_host 的实现是 return pmem + paddr - CONFIG_MBASE;
+pmem 是分配给模拟器的内存缓冲区的起始指针
+CONFIG_MBASE 是模拟器中物理内存的起始地址（如0x80000000）
+所以这个函数将客户机的物理地址映射到模拟器的内存缓冲区中的正确偏移位置
+
+调用 host_read 函数从转换后的主机地址读取指定长度的数据
+host_read 函数会处理不同长度（1、2、4、8字节）的读取，并处理对齐问题
+*/
 static word_t pmem_read(paddr_t addr, int len) {
   word_t ret = host_read(guest_to_host(addr), len);
   return ret;
@@ -52,7 +62,19 @@ void init_mem() {
 
 word_t paddr_read(paddr_t addr, int len) {
   if (likely(in_pmem(addr))) return pmem_read(addr, len);
+  /*
+  首先检查地址是否在物理内存范围内
+  in_pmem(addr) 检查 addr 是否在配置的物理内存范围内
+  likely() 是编译器优化指令，表示这个条件很可能为真
+  如果地址在物理内存范围内，调用 pmem_read 读取并返回数据
+  */
   IFDEF(CONFIG_DEVICE, return mmio_read(addr, len));
+  /*
+  如果地址不在物理内存范围内且启用了设备支持
+  IFDEF 是条件编译宏，只有在定义了 CONFIG_DEVICE 时才会编译此行
+  调用 mmio_read 从内存映射 I/O 设备读取数据并返回
+  这处理了外设的内存映射区域
+  */
   out_of_bound(addr);
   return 0;
 }
