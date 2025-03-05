@@ -35,14 +35,14 @@ enum {
 
 static void decode_operand(Decode *s, int *rd, word_t *src1, word_t *src2, word_t *imm, int type) {
   uint32_t i = s->isa.inst;
-  int rs1 = BITS(i, 19, 15);
-  int rs2 = BITS(i, 24, 20);
-  *rd     = BITS(i, 11, 7);
+  int rs1 = BITS(i, 19, 15);  // 从指令中提取rs1寄存器编号(位15-19)
+  int rs2 = BITS(i, 24, 20);  // 从指令中提取rs2寄存器编号(位20-24)
+  *rd     = BITS(i, 11, 7);   // 从指令中提取目标寄存器编号(位7-11)
   switch (type) {
-    case TYPE_I: src1R();          immI(); break;
-    case TYPE_U:                   immU(); break;
-    case TYPE_S: src1R(); src2R(); immS(); break;
-    case TYPE_N: break;
+    case TYPE_I: src1R();          immI(); break;  // I型指令：读取rs1, 提取I型立即数
+    case TYPE_U:                   immU(); break;  // U型指令：仅提取U型立即数
+    case TYPE_S: src1R(); src2R(); immS(); break;  // S型指令：读取rs1和rs2, 提取S型立即数
+    case TYPE_N: break;                            // N型：不需要操作数(如ebreak)
     default: panic("unsupported type = %d", type);
   }
 }
@@ -79,9 +79,11 @@ decode_operand 函数根据指令类型解码出不同的操作数：
 对于 U 型指令：仅获取 U 型立即数
 对于 S 型指令：获取两个寄存器值 rs1、rs2 和 S 型立即数
 对于 N 型指令：不提取操作数
+
+最后执行R(rd) = s->pc + imm;
 */
 
-  INSTPAT_START();
+  INSTPAT_START();//目的是生成一个标签，用于跳转
   INSTPAT("??????? ????? ????? ??? ????? 00101 11", auipc  , U, R(rd) = s->pc + imm);
   INSTPAT("??????? ????? ????? 100 ????? 00000 11", lbu    , I, R(rd) = Mr(src1 + imm, 1));
   INSTPAT("??????? ????? ????? 000 ????? 01000 11", sb     , S, Mw(src1 + imm, 1, src2));

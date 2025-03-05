@@ -59,6 +59,12 @@ finish:
   *shift = __shift;
 }
 /*
+hy:最后得到的key是去除末尾通配符后的值，
+mask是去除末尾通配符后的掩码（当此位置对应为通配符时置为0），
+shift是末尾通配符的数量
+目的是进行下面的比较：((((uint64_t)INSTPAT_INST(s) >> shift) & mask) == key)
+*/
+/*
 # `pattern_decode` 函数详细解析
 
 这个函数是 NEMU 中指令模式匹配系统的核心，用于将二进制模式字符串转换为高效匹配所需的数据结构。
@@ -235,6 +241,7 @@ if ((((uint64_t)INSTPAT_INST(s) >> shift) & mask) == key)
 INSTPAT_MATCH(s, ##__VA_ARGS__);
 如果模式匹配成功，调用 INSTPAT_MATCH 宏
 这个宏会解码指令操作数并执行实际的指令操作（在可变参数中定义）
+如：INSTPAT_MATCH(s, auipc, U, R(rd) = s->pc + imm);
 
 goto *(__instpat_end);
 使用计算的跳转（computed goto）直接跳到指令模式匹配表的结尾
