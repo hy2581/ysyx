@@ -48,7 +48,7 @@ static void decode_operand(Decode *s, int *rd, word_t *src1, word_t *src2, word_
     case TYPE_I: src1R();          immI(); break;  // I型指令：读取rs1, 提取I型立即数
     case TYPE_U:                   immU(); break;  // U型指令：仅提取U型立即数
     case TYPE_S: src1R(); src2R(); immS(); break;  // S型指令：读取rs1和rs2, 提取S型立即数
-    case TYPE_R: src1R(); src2R();        break;  // R型指令：读取rs1和rs2
+    case TYPE_R: src1R(); src2R();         break;  // R型指令：读取rs1和rs2
     case TYPE_B: src1R(); src2R(); immB(); break;  // B型指令：读取rs1和rs2，提取B型立即数
     case TYPE_J:                   immJ(); break;  // J型指令：提取J型立即数
     case TYPE_N: break;                            // N型：不需要操作数(如ebreak)
@@ -78,18 +78,6 @@ src1 - 第一个源操作数（通常是寄存器值）
 src2 - 第二个源操作数（通常是寄存器值）
 imm - 立即数
 
-调用 decode_operand 函数解析指令中的操作数
-使用 concat(TYPE_, type) 连接 TYPE_ 和参数 type，形成完整的类型名
-例如，对于I型指令，会变成 TYPE_I
-
-decode_operand 函数根据指令类型解码出不同的操作数：
-
-对于 I 型指令：获取 rs1 寄存器值和 I 型立即数
-对于 U 型指令：仅获取 U 型立即数
-对于 S 型指令：获取两个寄存器值 rs1、rs2 和 S 型立即数
-对于 N 型指令：不提取操作数
-
-最后执行R(rd) = s->pc + imm;
 */
 
   INSTPAT_START();//目的是生成一个标签，用于跳转
