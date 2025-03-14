@@ -20,3 +20,7 @@ The following subprojects/components are included. Some of them are not fully im
 
 可能用到的指令：
 am-kernels/tests/cpu-tests/里的make ARCH=riscv32-nemu ALL=dummy run
+am-kernels/tests/cpu-tests/  
+make ARCH=riscv32-nemu ALL=hello-str run
+/home/hy258/ics2024/nemu
+
