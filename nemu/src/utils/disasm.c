@@ -23,7 +23,7 @@ static void (*cs_free_dl)(cs_insn *insn, size_t count);
 
 static csh handle;
 
-void init_disasm() {
+void init_disasm() {//反汇编初始化函数
   void *dl_handle;
   dl_handle = dlopen("tools/capstone/repo/libcapstone.so.5", RTLD_LAZY);
   assert(dl_handle);
@@ -69,3 +69,10 @@ void disassemble(char *str, int size, uint64_t pc, uint8_t *code, int nbyte) {
   }
   cs_free_dl(insn, count);
 }
+/*
+调用 Capstone 库的 cs_disasm_dl 函数将二进制指令反汇编为 cs_insn 结构
+使用 assert 确保成功反汇编了一条指令
+使用 snprintf 将指令的助记符（如 add, mov, jmp 等）写入输出字符串
+如果指令有操作数（如寄存器名、立即数等），将其添加到输出字符串中
+最后释放 Capstone 分配的资源
+*/
