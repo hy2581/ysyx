@@ -19,6 +19,7 @@
 #include <readline/history.h>
 #include "sdb.h"
 #include <memory/paddr.h>
+#include <cpu/iringbuf.h>
 
 static int is_batch_mode = false;
 
@@ -177,6 +178,12 @@ static int cmd_d(char *args) {
   return 0;
 }
 
+// 添加命令处理函数
+static int cmd_iringbuf(char *args) {
+  iringbuf_display();
+  return 0;
+}
+
 static struct {
   const char *name;
   const char *description;
@@ -191,6 +198,7 @@ static struct {
   { "p", "Evaluate expression. Usage: p EXPR", cmd_p },
   { "w", "Set a watchpoint. Usage: w EXPR", cmd_w },
   { "d", "Delete a watchpoint. Usage: d N", cmd_d },
+  { "iringbuf", "Display recently executed instructions", cmd_iringbuf },
 
   /* TODO: Add more commands */
 

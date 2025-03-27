@@ -17,6 +17,7 @@
 #include <memory/paddr.h>
 #include <device/mmio.h>
 #include <isa.h>
+#include <cpu/iringbuf.h>
 
 #if   defined(CONFIG_PMEM_MALLOC)
 static uint8_t *pmem = NULL;
@@ -61,26 +62,31 @@ void init_mem() {
 }
 
 word_t paddr_read(paddr_t addr, int len) {
-  if (likely(in_pmem(addr))) return pmem_read(addr, len);
-  /*
-  首先检查地址是否在物理内存范围内
-  in_pmem(addr) 检查 addr 是否在配置的物理内存范围内
-  likely() 是编译器优化指令，表示这个条件很可能为真
-  如果地址在物理内存范围内，调用 pmem_read 读取并返回数据
-  */
-  IFDEF(CONFIG_DEVICE, return mmio_read(addr, len));
-  /*
-  如果地址不在物理内存范围内且启用了设备支持
-  IFDEF 是条件编译宏，只有在定义了 CONFIG_DEVICE 时才会编译此行
-  调用 mmio_read 从内存映射 I/O 设备读取数据并返回
-  这处理了外设的内存映射区域
-  */
-  out_of_bound(addr);
-  return 0;
+  if (likely(in_pmem(addr))) {
+    return pmem_read(addr, len);
+  } else {
+    // 打印错误信息和指令环形缓冲区
+    printf("\n*** Memory access violation at address 0x%x ***\n", addr);
+    iringbuf_display();
+    
+    // 原有错误处理代码...
+    IFDEF(CONFIG_DEVICE, return mmio_read(addr, len));
+    out_of_bound(addr);
+    return 0;
+  }
 }
 
 void paddr_write(paddr_t addr, int len, word_t data) {
-  if (likely(in_pmem(addr))) { pmem_write(addr, len, data); return; }
-  IFDEF(CONFIG_DEVICE, mmio_write(addr, len, data); return);
-  out_of_bound(addr);
+  if (likely(in_pmem(addr))) {
+    pmem_write(addr, len, data);
+    return;
+  } else {
+    // 打印错误信息和指令环形缓冲区
+    printf("\n*** Memory access violation at address 0x%x ***\n", addr);
+    iringbuf_display();
+    
+    // 原有错误处理代码...
+    IFDEF(CONFIG_DEVICE, mmio_write(addr, len, data); return);
+    out_of_bound(addr);
+  }
 }

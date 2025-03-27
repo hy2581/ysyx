@@ -18,6 +18,7 @@
 #include <cpu/difftest.h>
 #include <locale.h>
 #include <../src/monitor/sdb/sdb.h>
+#include <cpu/iringbuf.h>
 
 /* The assembly code of instructions executed is only output to the screen
  * when the number of instructions executed is less than this value.
@@ -85,6 +86,8 @@ static void exec_once(Decode *s, vaddr_t pc) {
   void disassemble(char *str, int size, uint64_t pc, uint8_t *code, int nbyte);//反汇编
   disassemble(p, s->logbuf + sizeof(s->logbuf) - p,
       MUXDEF(CONFIG_ISA_x86, s->snpc, s->pc), (uint8_t *)&s->isa.inst, ilen);
+
+      iringbuf_record(pc, s->isa.inst, p);
 #endif
 }
 
