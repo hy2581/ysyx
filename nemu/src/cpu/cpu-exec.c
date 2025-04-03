@@ -19,6 +19,7 @@
 #include <locale.h>
 #include <../src/monitor/sdb/sdb.h>
 #include <cpu/iringbuf.h>
+#include <monitor/ftrace.h>
 
 /* The assembly code of instructions executed is only output to the screen
  * when the number of instructions executed is less than this value.
@@ -143,6 +144,9 @@ void cpu_exec(uint64_t n) {
             ANSI_FMT("HIT BAD TRAP", ANSI_FG_RED))),
           nemu_state.halt_pc);
       // fall through
-    case NEMU_QUIT: statistic();
+    case NEMU_QUIT: {
+      statistic();
+      cleanup_ftrace();
+    }
   }
 }

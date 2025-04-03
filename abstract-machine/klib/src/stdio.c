@@ -203,11 +203,251 @@ int sprintf(char *out, const char *fmt, ...) {
 }
 
 int snprintf(char *out, size_t n, const char *fmt, ...) {
-  log_write("666\n");
+  va_list ap;
+  int ret;
+  
+  va_start(ap, fmt);
+  ret = vsnprintf(out, n, fmt, ap);
+  va_end(ap);
+  
+  return ret;
 }
 
 int vsnprintf(char *out, size_t n, const char *fmt, va_list ap) {
-  panic("Not implemented");
+  // 保存原始输出缓冲区指针，用于计算写入的字符数
+  char *original_out = out;
+  // 最大可写入字符数(为null终止符预留一个位置)
+  size_t remaining = n > 0 ? n - 1 : 0;
+  char c;
+  
+  // 如果n为0，仍然需要计算输出大小，但不写入任何字符
+  bool no_output = (n == 0);
+  
+  // 循环遍历格式字符串中的每个字符
+  while ((c = *fmt++)) {
+    if (c != '%') {  // 普通字符
+      if (!no_output && remaining > 0) {
+        *out++ = c;
+        remaining--;
+      } else if (no_output) {
+        // 虽然不输出，但仍需计数
+        out++;
+      }
+      continue;
+    }
+    
+    // 处理格式说明符
+    c = *fmt++;
+    if (c == '\0') break; // 防止格式字符串以'%'结尾导致越界访问
+    
+    // 根据格式类型字符处理不同的数据格式
+    switch (c) {
+      case 's': {  // 字符串格式：%s
+        char *s = va_arg(ap, char *);
+        if (!s) s = "(null)";
+        
+        while (*s) {
+          if (!no_output && remaining > 0) {
+            *out++ = *s++;
+            remaining--;
+          } else {
+            out++;
+            s++;
+          }
+        }
+        break;
+      }
+      case 'd': case 'i': {  // 有符号整数格式
+        int num = va_arg(ap, int);
+        if (num < 0) {
+          if (!no_output && remaining > 0) {
+            *out++ = '-';
+            remaining--;
+          } else if (no_output) {
+            out++;
+          }
+          num = -num;
+        }
+        
+        // 如果是0直接输出字符'0'
+        if (num == 0) {
+          if (!no_output && remaining > 0) {
+            *out++ = '0';
+            remaining--;
+          } else if (no_output) {
+            out++;
+          }
+          break;
+        }
+        
+        // 计算数字的各个位
+        char temp[16];
+        int i = 0;
+        while (num > 0) {
+          temp[i++] = '0' + (num % 10);
+          num /= 10;
+        }
+        
+        // 逆序输出
+        while (i > 0) {
+          if (!no_output && remaining > 0) {
+            *out++ = temp[--i];
+            remaining--;
+          } else {
+            out++;
+            i--;
+          }
+        }
+        break;
+      }
+      case 'x': case 'X': {  // 十六进制整数格式
+        unsigned int num = va_arg(ap, unsigned int);
+        if (num == 0) {
+          if (!no_output && remaining > 0) {
+            *out++ = '0';
+            remaining--;
+          } else if (no_output) {
+            out++;
+          }
+          break;
+        }
+        
+        char temp[16];
+        int i = 0;
+        while (num > 0) {
+          int digit = num % 16;
+          if (digit < 10)
+            temp[i++] = '0' + digit;
+          else
+            temp[i++] = (c == 'x' ? 'a' : 'A') + (digit - 10);
+          num /= 16;
+        }
+        
+        while (i > 0) {
+          if (!no_output && remaining > 0) {
+            *out++ = temp[--i];
+            remaining--;
+          } else {
+            out++;
+            i--;
+          }
+        }
+        break;
+      }
+      case 'c': {  // 字符格式
+        char ch = (char)va_arg(ap, int);
+        if (!no_output && remaining > 0) {
+          *out++ = ch;
+          remaining--;
+        } else if (no_output) {
+          out++;
+        }
+        break;
+      }
+      case 'u': {  // 无符号整数格式
+        unsigned int num = va_arg(ap, unsigned int);
+        if (num == 0) {
+          if (!no_output && remaining > 0) {
+            *out++ = '0';
+            remaining--;
+          } else if (no_output) {
+            out++;
+          }
+          break;
+        }
+        
+        char temp[16];
+        int i = 0;
+        while (num > 0) {
+          temp[i++] = '0' + (num % 10);
+          num /= 10;
+        }
+        
+        while (i > 0) {
+          if (!no_output && remaining > 0) {
+            *out++ = temp[--i];
+            remaining--;
+          } else {
+            out++;
+            i--;
+          }
+        }
+        break;
+      }
+      case 'p': {  // 指针格式
+        if (!no_output && remaining > 0) {
+          *out++ = '0';
+          remaining--;
+        } else if (no_output) {
+          out++;
+        }
+        
+        if (!no_output && remaining > 0) {
+          *out++ = 'x';
+          remaining--;
+        } else if (no_output) {
+          out++;
+        }
+        
+        uintptr_t num = (uintptr_t)va_arg(ap, void *);
+        if (num == 0) {
+          if (!no_output && remaining > 0) {
+            *out++ = '0';
+            remaining--;
+          } else if (no_output) {
+            out++;
+          }
+          break;
+        }
+        
+        char temp[16];
+        int i = 0;
+        while (num > 0) {
+          int digit = num % 16;
+          if (digit < 10)
+            temp[i++] = '0' + digit;
+          else
+            temp[i++] = 'a' + (digit - 10);
+          num /= 16;
+        }
+        
+        while (i > 0) {
+          if (!no_output && remaining > 0) {
+            *out++ = temp[--i];
+            remaining--;
+          } else {
+            out++;
+            i--;
+          }
+        }
+        break;
+      }
+      case '%': {  // 百分号
+        if (!no_output && remaining > 0) {
+          *out++ = '%';
+          remaining--;
+        } else if (no_output) {
+          out++;
+        }
+        break;
+      }
+      default:  // 未知格式说明符
+        if (!no_output && remaining > 0) {
+          *out++ = c;
+          remaining--;
+        } else if (no_output) {
+          out++;
+        }
+        break;
+    }
+  }
+  
+  // 添加字符串结束符
+  if (!no_output && n > 0) {
+    *out = '\0';
+  }
+  
+  return out - original_out;  // 返回本应写入的字符数(不包括结尾的'\0')
 }
 
 #endif

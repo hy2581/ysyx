@@ -41,7 +41,7 @@ static void serial_io_handler(uint32_t offset, int len, bool is_write) {
 }
 
 void init_serial() {
-  serial_base = new_space(8);
+  serial_base = new_space(8);//分配一个8字节大小的内存空间
 #ifdef CONFIG_HAS_PORT_IO
   add_pio_map ("serial", CONFIG_SERIAL_PORT, serial_base, 8, serial_io_handler);
 #else

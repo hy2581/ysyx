@@ -23,4 +23,5 @@ am-kernels/tests/cpu-tests/里的make ARCH=riscv32-nemu ALL=dummy run
 am-kernels/tests/cpu-tests/  
 make ARCH=riscv32-nemu ALL=hello-str run
 /home/hy258/ics2024/nemu
+./build/riscv32-nemu-interpreter --elf /home/hy258/ics2024/am-kernels/tests/cpu-tests/build/add-longlong-riscv32-nemu.elf /home/hy258/ics2024/am-kernels/tests/cpu-tests/build/add-longlong-riscv32-nemu.bin
 
