@@ -184,23 +184,46 @@ static int cmd_iringbuf(char *args) {
   return 0;
 }
 
+static int cmd_si(char *args) {
+  // 缺省值为1
+  int n = 1;
+
+  // 如果提供了参数，解析参数值
+  if (args != NULL) {
+    char *endptr;
+    n = strtol(args, &endptr, 10);
+
+    // 检查参数是否为有效数字
+    if (*endptr != '\0' || n <= 0) {
+      printf("Invalid argument: '%s'\n", args);
+      printf("Usage: si [N]\n");
+      return 0;
+    }
+  }
+
+  // 执行N条指令
+  cpu_exec(n);
+  return 0;
+}
+
 static struct {
   const char *name;
   const char *description;
   int (*handler) (char *);
-} cmd_table [] = {
-  { "help", "Display information about all supported commands", cmd_help },
-  { "c", "Continue the execution of the program", cmd_c },
-  { "q", "Exit NEMU", cmd_q },
-  { "n", "Execute the next instruction", cmd_n},
-  { "info", "Print the information of registers or watchpoints", cmd_info},
-  { "x", "Scan memory. Usage: x N EXPR", cmd_x },
-  { "p", "Evaluate expression. Usage: p EXPR", cmd_p },
-  { "w", "Set a watchpoint. Usage: w EXPR", cmd_w },
-  { "d", "Delete a watchpoint. Usage: d N", cmd_d },
-  { "iringbuf", "Display recently executed instructions", cmd_iringbuf },
+} cmd_table[] = {
+    {"help", "Display information about all supported commands", cmd_help},
+    {"c", "Continue the execution of the program", cmd_c},
+    {"q", "Exit NEMU", cmd_q},
+    {"n", "Execute the next instruction", cmd_n},
+    {"info", "Print the information of registers or watchpoints", cmd_info},
+    {"x", "Scan memory. Usage: x N EXPR", cmd_x},
+    {"p", "Evaluate expression. Usage: p EXPR", cmd_p},
+    {"w", "Set a watchpoint. Usage: w EXPR", cmd_w},
+    {"d", "Delete a watchpoint. Usage: d N", cmd_d},
+    {"iringbuf", "Display recently executed instructions", cmd_iringbuf},
+    {"si", "Execute N instructions step by step. Usage: si [N]", cmd_si},
 
-  /* TODO: Add more commands */
+    /* TODO: Add more commands */
 
 };
 
