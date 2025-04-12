@@ -69,6 +69,8 @@ LINKAGE   = $(OBJS) \
     $(addsuffix /build/, $(addprefix $(AM_HOME)/, $(LIBS))), \
     $(LIBS) ))
 
+# /home/hy258/ics2024/fceux-am/build/x86_64-qemu/src/main.o /home/hy258/ics2024/fceux-am/build/x86_64-qemu/src/fceux.o /home/hy258/ics2024/abstract-machine/am/build/am-x86_64-qemu.a /home/hy258/ics2024/abstract-machine/klib/build/klib-x86_64-qemu.a
+
 ## 3. 通用编译标志
 
 ### （交叉）编译器，例如，mips-linux-gnu-g++

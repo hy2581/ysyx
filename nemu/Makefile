@@ -28,6 +28,7 @@ remove_quote = $(patsubst "%",%,$(1))
 
 # 从menuconfig中提取变量
 # 分别是riscv32 interpreter riscv32-nemu-interpreter
+# call指的是调用remove_quote函数
 GUEST_ISA ?= $(call remove_quote,$(CONFIG_ISA))
 ENGINE ?= $(call remove_quote,$(CONFIG_ENGINE))
 NAME    = $(GUEST_ISA)-nemu-$(ENGINE)

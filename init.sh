@@ -1,9 +1,11 @@
 #!/bin/bash
 
-# usage: addenv env_name path
+# usage: 定义一个名为addenv的函数，用于添加环境变量，接受两个参数：环境变量名和路径。
 function addenv() {
   sed -i -e "/^export $1=.*/d" ~/.bashrc
   echo -e "\nexport $1=`readlink -e $2`" >> ~/.bashrc
+#   在 .bashrc 文件末尾添加一行 export 变量名=绝对路径，例如：
+#   export JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
   echo "By default this script will add environment variables into ~/.bashrc."
   echo "After that, please run 'source ~/.bashrc' to let these variables take effect."
   echo "If you use shell other than bash, please add these environment variables manually."
@@ -11,6 +13,7 @@ function addenv() {
 
 # usage: init repo branch directory trace [env]
 # trace = true|false
+# 定义一个名为init的函数，用于初始化项目仓库，接受5个参数：GitHub仓库、分支名、目标目录、是否跟踪和可选的环境变量名。
 function init() {
   if [ -d $3 ]; then
     echo "$3 is already initialized, skipping..."
