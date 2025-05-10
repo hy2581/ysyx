@@ -66,9 +66,9 @@ word_t paddr_read(paddr_t addr, int len) {
     return pmem_read(addr, len);
   } else {
     // 打印错误信息和指令环形缓冲区
-    printf("\n*** Memory access violation at address 0x%x ***\n", addr);
-    iringbuf_display();
-    
+    // printf("\n*** Memory access violation at address 0x%x ***\n", addr);
+    // iringbuf_display();
+
     // 原有错误处理代码...
     IFDEF(CONFIG_DEVICE, return mmio_read(addr, len));
     out_of_bound(addr);
@@ -82,9 +82,9 @@ void paddr_write(paddr_t addr, int len, word_t data) {
     return;
   } else {
     // 打印错误信息和指令环形缓冲区
-    printf("\n*** Memory access violation at address 0x%x ***\n", addr);
-    iringbuf_display();
-    
+    // printf("\n*** Memory access violation at address 0x%x ***\n", addr);
+    // iringbuf_display();
+
     // 原有错误处理代码...
     IFDEF(CONFIG_DEVICE, mmio_write(addr, len, data); return);
     out_of_bound(addr);
