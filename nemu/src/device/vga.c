@@ -61,6 +61,26 @@ static inline void update_screen() {
   SDL_RenderClear(renderer);
   SDL_RenderCopy(renderer, texture, NULL, NULL);
   SDL_RenderPresent(renderer);
+  /*
+  SDL_UpdateTexture(texture, NULL, vmem, SCREEN_W * sizeof(uint32_t))：
+
+  将模拟显存（vmem）中的像素数据更新到SDL纹理（texture）中
+  NULL参数表示更新整个纹理
+  SCREEN_W * sizeof(uint32_t)指定了每行像素数据的字节数（即行距）
+  SDL_RenderClear(renderer)：
+
+  清空渲染器（renderer）的当前内容
+  准备绘制新的一帧画面
+  SDL_RenderCopy(renderer, texture, NULL, NULL)：
+
+  将更新后的纹理复制到渲染器上
+  第一个NULL表示使用整个纹理内容
+  第二个NULL表示铺满整个目标渲染区域
+  SDL_RenderPresent(renderer)：
+
+  将渲染好的内容显示到屏幕上
+  这一步实际触发了屏幕的更新，让用户看到最新的画面内容
+  */
 }
 #else
 static void init_screen() {}
