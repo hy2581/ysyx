@@ -20,9 +20,18 @@ word_t isa_raise_intr(word_t NO, vaddr_t epc) {
    * Then return the address of the interrupt/exception vector.
    */
 
-  return 0;
-}
+  // 保存当前PC到mepc
+  cpu.csr.mepc = epc;
 
+  // 保存异常原因到mcause
+  cpu.csr.mcause = NO;
+
+  // RISC-V中断向量基地址存储在mtvec中
+  // 不考虑向量模式，直接使用mtvec作为入口地址
+  word_t vector = cpu.csr.mtvec;
+
+  return vector;
+}
 word_t isa_query_intr() {
   return INTR_EMPTY;
 }

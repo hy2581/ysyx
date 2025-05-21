@@ -173,8 +173,99 @@ imm - 立即数
   INSTPAT("0000001 ????? ????? 010 ????? 01100 11", mulhsu , R, R(rd) = ((int64_t)(sword_t)src1 * (uint64_t)src2) >> 32);
   INSTPAT("0000001 ????? ????? 011 ????? 01100 11", mulhu  , R, R(rd) = ((uint64_t)src1 * (uint64_t)src2) >> 32);
 
+  // 添加 CSR 指令
+  INSTPAT("??????? ????? ????? 001 ????? 1110011", csrrw, I, {
+    // 提取 CSR 地址，位于指令的 [31:20]
+    uint32_t csr = BITS(s->isa.inst, 31, 20);
+
+    // 读取旧值 (仅当 rd != 0 时才需要)
+    word_t old_val = 0;
+
+    // 根据 CSR 地址选择对应寄存器
+    switch (csr) {
+    case 0x300: // mstatus
+      old_val = cpu.csr.mstatus;
+      cpu.csr.mstatus = src1;
+      break;
+    case 0x305: // mtvec
+      old_val = cpu.csr.mtvec;
+      cpu.csr.mtvec = src1;
+      break;
+    case 0x341: // mepc
+      old_val = cpu.csr.mepc;
+      cpu.csr.mepc = src1;
+      break;
+    case 0x342: // mcause
+      old_val = cpu.csr.mcause;
+      cpu.csr.mcause = src1;
+      break;
+    // 可以根据需要添加其他 CSR 寄存器
+    default:
+      // 未实现的 CSR
+      panic("CSR address 0x%x not implemented", csr);
+    }
+
+    // 如果目标寄存器不是 x0，则写入旧值
+    if (rd != 0) {
+      R(rd) = old_val;
+    }
+  });
+
+  // 同样也要在其他 CSR 指令中添加对 mstatus 的支持
+  INSTPAT("??????? ????? ????? 010 ????? 1110011", csrrs, I, {
+    // CSRRS 实现（读后置位）
+    uint32_t csr = BITS(s->isa.inst, 31, 20);
+    word_t old_val = 0;
+
+    switch (csr) {
+    case 0x300: // mstatus
+      old_val = cpu.csr.mstatus;
+      if (src1 != 0)
+        cpu.csr.mstatus |= src1;
+      break;
+    case 0x305: // mtvec
+      old_val = cpu.csr.mtvec;
+      if (src1 != 0)
+        cpu.csr.mtvec |= src1; // 只有当 rs1!=x0 时才修改
+      break;
+    case 0x341: // mepc
+      old_val = cpu.csr.mepc;
+      if (src1 != 0)
+        cpu.csr.mepc |= src1;
+      break;
+    case 0x342: // mcause
+      old_val = cpu.csr.mcause;
+      if (src1 != 0)
+        cpu.csr.mcause |= src1;
+      break;
+    default:
+      panic("CSR address 0x%x not implemented", csr);
+    }
+
+    R(rd) = old_val; // 总是读取旧值
+  });
+
+  // 添加ecall指令实现
+  INSTPAT("0000000 00000 00000 000 00000 11100 11", ecall, N, {
+    // 保存下一条指令地址到mepc，跳转到中断处理程序
+    s->dnpc = isa_raise_intr(0x0B, s->pc); // 0x0B是环境调用异常编号
+  });
+
+  // 添加ebreak指令实现
+  INSTPAT("0000000 00001 00000 000 00000 11100 11", ebreak, N, {
+    s->dnpc = isa_raise_intr(0x03, s->pc); // 0x03是断点异常编号
+  });
+
+  // 添加mret指令实现
+  INSTPAT("0011000 00010 00000 000 00000 11100 11", mret, N, {
+    // 从mepc读取返回地址，并设置为下一条要执行的指令
+    s->dnpc = cpu.csr.mepc;
+
+    // 如果需要处理mstatus寄存器的中断使能状态恢复等，也应在此处添加
+    // 简化版本暂不处理mstatus的状态变化
+  });
+
   // 已有的特殊指令
-  INSTPAT("0000000 00001 00000 000 00000 11100 11", ebreak , N, NEMUTRAP(s->pc, R(10)));
   INSTPAT("??????? ????? ????? ??? ????? ????? ??", inv    , N, INV(s->pc));
   INSTPAT_END();
 
