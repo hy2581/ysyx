@@ -8,9 +8,12 @@
 #endif
 
 struct Context {
-  // TODO: fix the order of these members to match trap.S
-  uintptr_t mepc, mcause, gpr[NR_REGS], mstatus;
-  void *pdir;
+  // 按照trap.S中保存的顺序排列
+  uintptr_t gpr[NR_REGS];  // 首先保存通用寄存器
+  uintptr_t mcause;        // 然后是mcause
+  uintptr_t mstatus;       // 接着是mstatus
+  uintptr_t mepc;          // 最后是mepc
+  void *pdir;              // 地址空间信息
 };
 
 #ifdef __riscv_e
