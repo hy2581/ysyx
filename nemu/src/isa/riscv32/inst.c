@@ -252,9 +252,8 @@ imm - 立即数
   });
 
   // 添加ebreak指令实现
-  INSTPAT("0000000 00001 00000 000 00000 11100 11", ebreak, N, {
-    s->dnpc = isa_raise_intr(0x03, s->pc); // 0x03是断点异常编号
-  });
+  INSTPAT("0000000 00001 00000 000 00000 11100 11", ebreak, N,
+          NEMUTRAP(s->pc, R(10))); // R(10) is $a0 hy:终于解决了PA3出现的HIT GOOD TRAP无法弹出的问题
 
   // 添加mret指令实现
   INSTPAT("0011000 00010 00000 000 00000 11100 11", mret, N, {

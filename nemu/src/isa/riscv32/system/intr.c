@@ -21,6 +21,9 @@ word_t isa_raise_intr(word_t NO, vaddr_t epc) {
    */
 
   // 保存当前PC到mepc
+  Log("Saving EPC: 0x%08x", epc);  // 使用%x以十六进制打印地址
+  Log("Saving cause: %u", NO);     // 使用%u打印无符号数
+
   cpu.csr.mepc = epc;
 
   // 保存异常原因到mcause
