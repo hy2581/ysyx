@@ -23,13 +23,13 @@ void hello_fun(void *arg) {
 
 void init_proc() {
   switch_boot_pcb();
-
   Log("Initializing processes...");
 
-  naive_uload(NULL, NULL);
+  // 使用正确的ramdisk路径
+  naive_uload(NULL, "/bin/bmp-test");
+  // 或者
+  // naive_uload(NULL, "/bin/hello");
 
-  // load program here
-  // hy:我需要去读一下源代码，看看到底是怎么load的程序
   Log("Processes initialized.");
 }
 

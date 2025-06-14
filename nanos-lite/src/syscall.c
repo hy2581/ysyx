@@ -1,13 +1,16 @@
 #include "syscall.h"
 #include <common.h>
+#include <elf.h>
+#include <fs.h>
 #include <proc.h>
+#include <sys/time.h> // 添加这一行，包含timeval结构体定义
 
 // 声明yield函数
 void naive_uload(PCB *pcb, const char *filename);
 void context_uload(PCB *pcb, const char *filename, char *const argv[],
                    char *const envp[]);
 
-void do_syscall(Context *c) {
+Context *do_syscall(Context *c) {
   uintptr_t a[4];
   a[0] = c->GPR1;                 // syscall_id
   a[1] = c->GPR2;                 // arg1
@@ -38,9 +41,9 @@ void do_syscall(Context *c) {
     SYS_gettimeofday
   };
 
-  printf("System call received: id=%u, args=%u,%u,%u\n",
-         (unsigned int)syscall_id, (unsigned int)a[1], (unsigned int)a[2],
-         (unsigned int)a[3]);
+  // printf("System call received: id=%u, args=%u,%u,%u\n",
+  //        (unsigned int)syscall_id, (unsigned int)a[1], (unsigned int)a[2],
+  //        (unsigned int)a[3]);
   switch (syscall_id) {
   case SYS_exit:
     // 处理程序退出系统调用
@@ -55,54 +58,79 @@ void do_syscall(Context *c) {
     c->GPRx = 0;
     break;
 
-  case SYS_write:
-    // 处理写入系统调用
-    if (a[1] == 1 || a[1] == 2) { // fd = 1 (stdout) 或 fd = 2 (stderr)
-      // 标准输出或标准错误
-      int i;
-      char *buf = (char *)a[2];
-      int len = a[3];
-
-      for (i = 0; i < len; i++) {
-        putch(buf[i]);
-      }
-      c->GPRx = len; // 返回成功写入的字节数
-    } else {
-      // 其他文件描述符，暂不支持，返回错误
-      printf("Unsupported file descriptor: %d\n", (int)a[1]);
-      c->GPRx = -1;
-    }
-    break;
-
   case SYS_brk:
-    // 内存分配，简单实现：总是成功
-    // printf("System call: brk(addr=0x%x)\n", (uint32_t)a[1]);
-    c->GPRx = 0; // 返回0表示成功
+    // 打印修改前的 GPRx 值
+    c->GPRx = 0;
+    // 打印修改后的 GPRx 值
     break;
 
   case SYS_open:
+    c->GPRx = fs_open((const char *)a[1], a[2], a[3]);
+    break;
+
   case SYS_read:
-  case SYS_close:
+    c->GPRx = fs_read(a[1], (void *)a[2], a[3]);
+    break;
+
+  case SYS_write:
+    c->GPRx = fs_write(a[1], (const void *)a[2], a[3]);
+    break;
+
   case SYS_lseek:
-    // 文件操作，暂时返回错误
-    printf("System call: file operation %d (unimplemented)\n", (int)a[0]);
-    c->GPRx = -1;
+    c->GPRx = fs_lseek(a[1], a[2], a[3]);
+    break;
+
+  case SYS_close:
+    c->GPRx = fs_close(a[1]);
     break;
 
   case SYS_fstat:
     // 简单实现：返回成功，但不填充stat结构
-    printf("System call: fstat(fd=%d, stat_buf=0x%x)\n", (int)a[1], (unsigned int)a[2]);
+    printf("System call: fstat(fd=%d, stat_buf=0x%x)\n", (int)a[1],
+           (unsigned int)a[2]);
     // 返回0表示成功
     c->GPRx = 0;
     break;
 
-  case SYS_gettimeofday:
-    // 获取系统时间，暂时返回0
-    printf("System call: gettimeofday\n");
+  case SYS_gettimeofday: {
+    struct timeval *tv = (struct timeval *)a[1];
+    // 获取当前时间（从AM中获取）
+    if (tv) {
+      uint64_t us = io_read(AM_TIMER_UPTIME).us;
+      tv->tv_sec = us / 1000000;
+      tv->tv_usec = us % 1000000;
+    }
+    // timezone参数一般忽略
+    c->GPRx = 0; // 设置返回值为0表示成功
+    break;       // 使用break而不是return
+  }
+
+  case SYS_getpid:
+    // 简单实现：返回固定的pid值
+    printf("System call: getpid\n");
+    c->GPRx = 1; // 返回一个固定的进程ID，比如1
+    break;
+
+  case SYS_time:
+    // 返回一个简单的时间值
     c->GPRx = 0;
+    break;
+
+  case SYS_execve:
+    // 加载并执行一个新程序
+    naive_uload(NULL, (const char *)a[1]);
+    c->GPRx = 0; // 成功
+    break;
+
+  case SYS_kill:
+    // 简单实现：总是返回成功
+    printf("System call: kill(pid=%d, sig=%d)\n", (int)a[1], (int)a[2]);
+    c->GPRx = 0; // 返回0表示成功
     break;
 
   default:
     panic("Unhandled syscall ID = %d", a[0]);
   }
+
+  return c; // 返回修改后的上下文
 }

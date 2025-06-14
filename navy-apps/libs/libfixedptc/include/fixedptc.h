@@ -150,12 +150,48 @@ static inline fixedpt fixedpt_abs(fixedpt A) {
 	return 0;
 }
 
-static inline fixedpt fixedpt_floor(fixedpt A) {
-	return 0;
+/**
+ * 返回不大于x的最大整数
+ * 例如: floor(3.7) = 3, floor(-3.7) = -4
+ */
+fixedpt fixedpt_floor(fixedpt x) {
+    // 获取小数部分的掩码
+    fixedpt mask = FIXEDPT_FMASK;
+    
+    // 如果x是正数或零，直接清除小数部分
+    if (x >= 0) {
+        return x & ~mask;
+    } 
+    // 如果x是负数且有小数部分，需要向下取整
+    else if ((x & mask) != 0) {
+        return (x & ~mask) - (1 << FIXEDPT_FBITS);
+    }
+    // 如果x是负数但没有小数部分，保持不变
+    else {
+        return x;
+    }
 }
 
-static inline fixedpt fixedpt_ceil(fixedpt A) {
-	return 0;
+/**
+ * 返回不小于x的最小整数
+ * 例如: ceil(3.7) = 4, ceil(-3.7) = -3
+ */
+fixedpt fixedpt_ceil(fixedpt x) {
+    // 获取小数部分的掩码
+    fixedpt mask = FIXEDPT_FMASK;
+    
+    // 如果x是负数或零，直接清除小数部分
+    if (x <= 0) {
+        return x & ~mask;
+    }
+    // 如果x是正数且有小数部分，需要向上取整
+    else if ((x & mask) != 0) {
+        return (x & ~mask) + (1 << FIXEDPT_FBITS);
+    }
+    // 如果x是正数但没有小数部分，保持不变
+    else {
+        return x;
+    }
 }
 
 /*

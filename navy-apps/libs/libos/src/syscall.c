@@ -1,6 +1,7 @@
 #include "syscall.h"
 #include <assert.h>
 #include <stdio.h>
+#include <string.h>
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <time.h>
@@ -52,146 +53,227 @@ intptr_t _syscall_(intptr_t type, intptr_t a0, intptr_t a1, intptr_t a2) {
   register intptr_t _gpr3 asm (GPR3) = a1;
   register intptr_t _gpr4 asm (GPR4) = a2;
   register intptr_t ret asm (GPRx);
-  asm volatile (SYSCALL : "=r" (ret) : "r"(_gpr1), "r"(_gpr2), "r"(_gpr3), "r"(_gpr4));
+  asm volatile(SYSCALL
+               : "=r"(ret)
+               : "r"(_gpr1), "r"(_gpr2), "r"(_gpr3), "r"(_gpr4));
   return ret;
 }
 
-void _exit(int status) {
-  _syscall_(SYS_exit, status, 0, 0);
-  while (1);
-}
-
 int _open(const char *path, int flags, mode_t mode) {
-  return _syscall_(SYS_open, (intptr_t)path, flags, mode);
+  // printf("[_open] 尝试打开: %s, flags=%d, mode=%d\n", path, flags, mode);
+  int ret = _syscall_(SYS_open, (intptr_t)path, flags, mode);
+  // printf("[_open] 系统调用返回: %d (如果<0表示错误)\n", ret);
+  return ret;
 }
 
 int _write(int fd, void *buf, size_t count) {
-  return _syscall_(SYS_write, fd, (intptr_t)buf, count);
+  int ret = _syscall_(SYS_write, fd, (intptr_t)buf, count);
+
+  // 特殊处理 _write 的返回值打印，避免无限递归
+  // 只有非标准错误输出时才打印，防止递归
+  // if (fd != 2) {
+  //   char debug_buf[64];
+  //   sprintf(debug_buf, "[_write] 系统调用返回: %d\n", ret);
+  //   _syscall_(SYS_write, 2, (intptr_t)debug_buf, strlen(debug_buf));
+  // }
+
+  return ret;
 }
 
 void *_sbrk(intptr_t increment) {
   // 静态变量用于记录当前program break的位置
+  // 首次调用时为NULL，后续调用会保留上次的值
   static char *program_break = NULL;
   char *old_break, *new_break;
-  
+
   // 第一次调用时初始化program_break为_end的位置
+  // _end是由链接器提供的符号，表示程序数据段的结束位置
   if (program_break == NULL) {
-    extern char _end; // 使用外部符号_end（在链接时由ld提供）
-    program_break = &_end;
+    extern char _end;      // 声明外部符号_end
+    program_break = &_end; // 将program_break初始化为_end符号的地址
+
+    char buf[32];                // 用于存储地址的字符串表示
+    sprintf(buf, "%p\n", &_end); // 将地址转换为字符串
+    _write(2, buf, strlen(buf)); // 输出地址字符串
+
+    // 调试建议：在此处添加brk初始值的输出
+    char debug_buf[64];
+    sprintf(debug_buf, "DEBUG: Initial program_break = %p\n", program_break);
+    _write(2, debug_buf, strlen(debug_buf));
   }
 
-  old_break = program_break; // 保存旧的program break位置
+  old_break = program_break;             // 保存当前program break位置
   new_break = program_break + increment; // 计算新的program break位置
-  
+
+  // 调试建议：添加内存增量信息
+  char debug_buf[128];
+  sprintf(debug_buf, "DEBUG: _sbrk called with increment=%d, old=%p,new=%p\n",
+          increment, old_break, new_break);
+  _write(2, debug_buf, strlen(debug_buf));
+
   // 通过SYS_brk系统调用请求设置新的program break
+  // 这里将指针转换为intptr_t类型作为系统调用参数
   int ret = _syscall_(SYS_brk, (intptr_t)new_break, 0, 0);
-  
+  sprintf(debug_buf, "[_sbrk]ret=%d\n", ret);
+  _write(2, debug_buf, strlen(debug_buf));
   if (ret == 0) {
     // 系统调用成功，更新记录的program break位置
     program_break = new_break;
-    return (void *)old_break; // 返回旧的program break位置
+
+    // 调试建议：添加系统调用成功信息
+
+    return (void *)
+        old_break; // 返回旧的program break位置，这将作为分配内存的起始地址
   } else {
-    // 系统调用失败
+    // 系统调用失败，返回(void *)-1表示错误
+    // 调试建议：添加失败信息
+    _write(2, "HYBUG: SYS_brk failed\n", 22);
     return (void *)-1;
   }
 }
 
 int _read(int fd, void *buf, size_t count) {
-  return _syscall_(SYS_read, fd, (intptr_t)buf, count);
+  int ret = _syscall_(SYS_read, fd, (intptr_t)buf, count);
+
+  // char debug_buf[64];
+  // sprintf(debug_buf, "[_read] 系统调用返回: %d\n", ret);
+  // _write(2, debug_buf, strlen(debug_buf));
+
+  return ret;
 }
 
-int _close(int fd) { return _syscall_(SYS_close, fd, 0, 0); }
+int _close(int fd) {
+  int ret = _syscall_(SYS_close, fd, 0, 0);
+
+  // char debug_buf[64];
+  // sprintf(debug_buf, "[_close] 系统调用返回: %d\n", ret);
+  // _write(2, debug_buf, strlen(debug_buf));
+
+  return ret;
+}
 
 off_t _lseek(int fd, off_t offset, int whence) {
-  return _syscall_(SYS_lseek, fd, offset, whence);
+  off_t ret = _syscall_(SYS_lseek, fd, offset, whence);
+
+  // char debug_buf[64];
+  // sprintf(debug_buf, "[_lseek] 系统调用返回: %ld\n", (long)ret);
+  // _write(2, debug_buf, strlen(debug_buf));
+
+  return ret;
 }
 
 int _gettimeofday(struct timeval *tv, struct timezone *tz) {
-  return _syscall_(SYS_gettimeofday, (intptr_t)tv, (intptr_t)tz, 0);
+  int ret = _syscall_(SYS_gettimeofday, (intptr_t)tv, (intptr_t)tz, 0);
+
+  // char debug_buf[64];
+  // sprintf(debug_buf, "[_gettimeofday] 系统调用返回: %d\n", ret);
+  // _write(2, debug_buf, strlen(debug_buf));
+
+  return ret;
 }
 
 int _execve(const char *fname, char * const argv[], char *const envp[]) {
-  return _syscall_(SYS_execve, (intptr_t)fname, (intptr_t)argv, (intptr_t)envp);
-}
+  int ret =
+      _syscall_(SYS_execve, (intptr_t)fname, (intptr_t)argv, (intptr_t)envp);
 
-// Syscalls below are not used in Nanos-lite.
-// But to pass linking, they are defined as dummy functions.
+  char debug_buf[64];
+  sprintf(debug_buf, "[_execve] 系统调用返回: %d\n", ret);
+  _write(2, debug_buf, strlen(debug_buf));
+
+  return ret;
+}
 
 int _fstat(int fd, struct stat *buf) {
-  return _syscall_(SYS_fstat, fd, (intptr_t)buf, 0);
+  int ret = _syscall_(SYS_fstat, fd, (intptr_t)buf, 0);
+
+  char debug_buf[64];
+  sprintf(debug_buf, "[_fstat] 系统调用返回: %d\n", ret);
+  _write(2, debug_buf, strlen(debug_buf));
+
+  return ret;
 }
 
-int _stat(const char *fname, struct stat *buf) {
-  printf("未实现");
-  assert(0);
-  return -1;
+int _kill(int pid, int sig) {
+  int ret = _syscall_(SYS_kill, pid, sig, 0);
+
+  char debug_buf[64];
+  sprintf(debug_buf, "[_kill] 系统调用返回: %d\n", ret);
+  _write(2, debug_buf, strlen(debug_buf));
+
+  return ret;
 }
 
-int _kill(int pid, int sig) { return _syscall_(SYS_kill, pid, sig, 0); }
+pid_t _getpid() {
+  pid_t ret = _syscall_(SYS_getpid, 0, 0, 0);
 
-pid_t _getpid() { return _syscall_(SYS_getpid, 0, 0, 0); }
+  char debug_buf[64];
+  sprintf(debug_buf, "[_getpid] 系统调用返回: %d\n", ret);
+  _write(2, debug_buf, strlen(debug_buf));
 
-pid_t _fork() { return _syscall_(SYS_fork, 0, 0, 0); }
+  return ret;
+}
+
+pid_t _fork() {
+  pid_t ret = _syscall_(SYS_fork, 0, 0, 0);
+
+  char debug_buf[64];
+  sprintf(debug_buf, "[_fork] 系统调用返回: %d\n", ret);
+  _write(2, debug_buf, strlen(debug_buf));
+
+  return ret;
+}
 
 pid_t vfork() {
   return _fork(); // 使用_fork实现vfork
 }
 
 int _link(const char *d, const char *n) {
-  return _syscall_(SYS_link, (intptr_t)d, (intptr_t)n, 0);
+  int ret = _syscall_(SYS_link, (intptr_t)d, (intptr_t)n, 0);
+
+  char debug_buf[64];
+  sprintf(debug_buf, "[_link] 系统调用返回: %d\n", ret);
+  _write(2, debug_buf, strlen(debug_buf));
+
+  return ret;
 }
 
-int _unlink(const char *n) { return _syscall_(SYS_unlink, (intptr_t)n, 0, 0); }
+int _unlink(const char *n) {
+  int ret = _syscall_(SYS_unlink, (intptr_t)n, 0, 0);
 
-pid_t _wait(int *status) { return _syscall_(SYS_wait, (intptr_t)status, 0, 0); }
+  char debug_buf[64];
+  sprintf(debug_buf, "[_unlink] 系统调用返回: %d\n", ret);
+  _write(2, debug_buf, strlen(debug_buf));
 
-clock_t _times(void *buf) { return _syscall_(SYS_times, (intptr_t)buf, 0, 0); }
-
-int pipe(int pipefd[2]) {
-  printf("未实现");
-  assert(0);
-  return -1;
+  return ret;
 }
 
-int dup(int oldfd) {
-  printf("未实现");
-  assert(0);
-  return -1;
+pid_t _wait(int *status) {
+  pid_t ret = _syscall_(SYS_wait, (intptr_t)status, 0, 0);
+
+  char debug_buf[64];
+  sprintf(debug_buf, "[_wait] 系统调用返回: %d\n", ret);
+  _write(2, debug_buf, strlen(debug_buf));
+
+  return ret;
 }
 
-int dup2(int oldfd, int newfd) {
-  printf("未实现");
-  return -1;
+clock_t _times(void *buf) {
+  clock_t ret = _syscall_(SYS_times, (intptr_t)buf, 0, 0);
+
+  char debug_buf[64];
+  sprintf(debug_buf, "[_times] 系统调用返回: %ld\n", (long)ret);
+  _write(2, debug_buf, strlen(debug_buf));
+
+  return ret;
 }
 
-unsigned int sleep(unsigned int seconds) {
-  struct timeval tv_start, tv_end;
-  _gettimeofday(&tv_start, NULL);
+void _exit(int status) {
+  intptr_t ret = _syscall_(SYS_exit, status, 0, 0);
 
-  // 简单实现，使用循环等待
-  while (1) {
-    _gettimeofday(&tv_end, NULL);
-    if ((tv_end.tv_sec - tv_start.tv_sec) >= seconds) {
-      break;
-    }
-  }
+  char debug_buf[64];
+  sprintf(debug_buf, "[_exit] 系统调用返回: %ld\n", (long)ret);
+  _write(2, debug_buf, strlen(debug_buf));
 
-  return 0;
-}
-
-ssize_t readlink(const char *pathname, char *buf, size_t bufsiz) {
-  printf("未实现");
-  assert(0);
-  return -1;
-}
-
-int symlink(const char *target, const char *linkpath) {
-  printf("未实现");
-  assert(0);
-  return -1;
-}
-
-int ioctl(int fd, unsigned long request, ...) {
-  printf("未实现");
-  return -1;
+  while (1)
+    ;
 }

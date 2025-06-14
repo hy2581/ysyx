@@ -21,11 +21,8 @@ int printf(const char *fmt, ...) {
   va_end(ap);
   
   // 将缓冲区内容逐字符输出到标准输出
-  char *p = buf;
-  while (*p) {
-    putch(*p++);
-  }
-  
+  putstr(buf);
+
   return ret;
 }
 /*
