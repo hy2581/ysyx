@@ -125,73 +125,48 @@ typedef	__uint128_t fixedptud;
  * Putting them only in macros will effectively make them optional. */
 #define fixedpt_tofloat(T) ((float) ((T)*((float)(1)/(float)(1L << FIXEDPT_FBITS))))
 
-/* Multiplies a fixedpt number with an integer, returns the result. */
-static inline fixedpt fixedpt_muli(fixedpt A, int B) {
-	return 0;
-}
+// /* Multiplies a fixedpt number with an integer, returns the result. */
+// static inline fixedpt fixedpt_muli(fixedpt A, int B) {
+// 	return fixedpt_mul(A, fixedpt_fromint(B));
+// }
 
-/* Divides a fixedpt number with an integer, returns the result. */
-static inline fixedpt fixedpt_divi(fixedpt A, int B) {
-	return 0;
-}
+// /* Divides a fixedpt number with an integer, returns the result. */
+// static inline fixedpt fixedpt_divi(fixedpt A, int B) {
+// 	return fixedpt_div(A, fixedpt_fromint(B));
+// }
 
 /* Multiplies two fixedpt numbers, returns the result. */
 static inline fixedpt fixedpt_mul(fixedpt A, fixedpt B) {
-	return 0;
+	return (fixedpt)(((fixedptd)A * (fixedptd)B) >> FIXEDPT_FBITS);
 }
 
 
 /* Divides two fixedpt numbers, returns the result. */
 static inline fixedpt fixedpt_div(fixedpt A, fixedpt B) {
-	return 0;
+	return (fixedpt)(((fixedptd)A << FIXEDPT_FBITS) / (fixedptd)B);
+}
+
+/* Multiplies a fixedpt number with an integer, returns the result. */
+static inline fixedpt fixedpt_muli(fixedpt A, int B) {
+	return fixedpt_mul(A, fixedpt_fromint(B));
+}
+
+/* Divides a fixedpt number with an integer, returns the result. */
+static inline fixedpt fixedpt_divi(fixedpt A, int B) {
+	return fixedpt_div(A, fixedpt_fromint(B));
 }
 
 static inline fixedpt fixedpt_abs(fixedpt A) {
-	return 0;
+	return (A < 0) ? (-A) : A;
 }
 
-/**
- * 返回不大于x的最大整数
- * 例如: floor(3.7) = 3, floor(-3.7) = -4
- */
-fixedpt fixedpt_floor(fixedpt x) {
-    // 获取小数部分的掩码
-    fixedpt mask = FIXEDPT_FMASK;
-    
-    // 如果x是正数或零，直接清除小数部分
-    if (x >= 0) {
-        return x & ~mask;
-    } 
-    // 如果x是负数且有小数部分，需要向下取整
-    else if ((x & mask) != 0) {
-        return (x & ~mask) - (1 << FIXEDPT_FBITS);
-    }
-    // 如果x是负数但没有小数部分，保持不变
-    else {
-        return x;
-    }
+static inline fixedpt fixedpt_floor(fixedpt A) {
+	return A & 0xffffff00;
 }
 
-/**
- * 返回不小于x的最小整数
- * 例如: ceil(3.7) = 4, ceil(-3.7) = -3
- */
-fixedpt fixedpt_ceil(fixedpt x) {
-    // 获取小数部分的掩码
-    fixedpt mask = FIXEDPT_FMASK;
-    
-    // 如果x是负数或零，直接清除小数部分
-    if (x <= 0) {
-        return x & ~mask;
-    }
-    // 如果x是正数且有小数部分，需要向上取整
-    else if ((x & mask) != 0) {
-        return (x & ~mask) + (1 << FIXEDPT_FBITS);
-    }
-    // 如果x是正数但没有小数部分，保持不变
-    else {
-        return x;
-    }
+static inline fixedpt fixedpt_ceil(fixedpt A) {
+	if (fixedpt_floor(A) == A) return A;
+	return fixedpt_floor(A) + FIXEDPT_ONE;
 }
 
 /*

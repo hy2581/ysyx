@@ -1,0 +1,8 @@
+*.*
+*
+!*/
+!/material/*
+!/QA/*
+!.gitignore
+!README.md
+!reference.md

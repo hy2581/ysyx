@@ -26,7 +26,7 @@ void init_proc() {
   Log("Initializing processes...");
 
   // 使用正确的ramdisk路径
-  naive_uload(NULL, "/bin/bmp-test");
+  naive_uload(NULL, "/bin/bird");
   // 或者
   // naive_uload(NULL, "/bin/hello");
 
